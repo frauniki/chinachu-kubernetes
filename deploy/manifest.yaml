@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chinachu
+  namespace: chinachu
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      name: http
+      targetPort: 10772
+  selector:
+    app: chinachu
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: chinachu
+  namespace: chinachu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chinachu
+  template:
+    metadata:
+      labels:
+        app: chinachu
+    spec:
+      containers:
+        - name: chinachu
+          image: frauniki/chinachu:gamma
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 10772
+          volumeMounts:
+            - mountPath: /etc/localtime
+              name: timezone
+            - mountPath: /usr/local/chinachu/config.json
+              name: chinachu-volume
+              subPath: conf/config.json
+            - mountPath: /usr/local/chinachu/rules.json
+              name: chinachu-volume
+              subPath: conf/rules.json
+            - mountPath: /usr/local/chinachu/data
+              name: chinachu-volume
+              subPath: data
+            - mountPath: /usr/local/chinachu/recorded
+              name: chinachu-volume
+              subPath: recorded
+      volumes:
+        - name: timezone
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Tokyo
+        - name: chinachu-volume
+          persistentVolumeClaim:
+            claimName: chinachu-pvc
